@@ -15,10 +15,10 @@ import {
   testChainConnectionConfigs,
 } from '@hyperlane-xyz/sdk';
 
-import { Erc20TokenConfig, HypERC20Config } from '../src/config';
-import { HypERC20Contracts } from '../src/contracts';
-import { HypERC20Deployer } from '../src/deploy';
-import { HypERC20 } from '../src/types';
+import { Erc20TokenConfig, FaucetfulERC20Config } from '../src/config';
+import { FaucetfulERC20Contracts } from '../src/contracts';
+import { FaucetfulERC20Deployer } from '../src/deploy';
+import { FaucetfulERC20 } from '../src/types';
 
 const localChain = 'test1';
 const remoteChain = 'test2';
@@ -29,19 +29,19 @@ const amount = 10;
 const testInterchainGasPayment = 123456789;
 
 const tokenConfig: Erc20TokenConfig = {
-  name: 'HypERC20',
+  name: 'FaucetfulERC20',
   symbol: 'HYP',
   totalSupply,
 };
 
-describe('HypERC20', async () => {
+describe('FaucetfulERC20', async () => {
   let owner: SignerWithAddress;
   let recipient: SignerWithAddress;
   let core: TestCoreApp;
-  let deployer: HypERC20Deployer<TestChainNames>;
-  let contracts: Record<TestChainNames, HypERC20Contracts>;
-  let local: HypERC20;
-  let remote: HypERC20;
+  let deployer: FaucetfulERC20Deployer<TestChainNames>;
+  let contracts: Record<TestChainNames, FaucetfulERC20Contracts>;
+  let local: FaucetfulERC20;
+  let remote: FaucetfulERC20;
 
   before(async () => {
     [owner, recipient] = await ethers.getSigners();
@@ -53,12 +53,16 @@ describe('HypERC20', async () => {
     const config = core.extendWithConnectionClientConfig(
       getChainToOwnerMap(testChainConnectionConfigs, owner.address),
     );
-    const configWithTokenInfo: ChainMap<TestChainNames, HypERC20Config> =
+    const configWithTokenInfo: ChainMap<TestChainNames, FaucetfulERC20Config> =
       objMap(config, (key) => ({
         ...config[key],
         ...tokenConfig,
       }));
-    deployer = new HypERC20Deployer(multiProvider, configWithTokenInfo, core);
+    deployer = new FaucetfulERC20Deployer(
+      multiProvider,
+      configWithTokenInfo,
+      core,
+    );
     contracts = await deployer.deploy();
     local = contracts[localChain].router;
     remote = contracts[remoteChain].router;
@@ -132,7 +136,7 @@ describe('HypERC20', async () => {
 });
 
 const expectBalance = async (
-  token: HypERC20,
+  token: FaucetfulERC20,
   signer: SignerWithAddress,
   balance: number,
 ) => expect(await token.balanceOf(signer.address)).to.eq(balance);

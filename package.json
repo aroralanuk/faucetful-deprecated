@@ -51,7 +51,7 @@
   },
   "scripts": {
     "clean": "hardhat clean && rm -rf dist cache src/types",
-    "build": "hardhat compile && tsc",
+    "build": "hardhat compile",
     "coverage": "hardhat coverage",
     "lint": "eslint . --ext .ts",
     "prettier": "prettier --write ./contracts ./test",

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.13;
+pragma solidity 0.8.16;
 
 import {Router} from "@hyperlane-xyz/core/contracts/Router.sol";
 
@@ -10,7 +10,7 @@ import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/
  * @author Abacus Works
  * @dev Supply on each chain is not constant but the aggregate supply across all chains is.
  */
-contract HypERC20 is Router, ERC20Upgradeable {
+contract FaucetfulERC20 is Router, ERC20Upgradeable {
     /**
      * @dev Emitted on `transferRemote` when a transfer message is dispatched.
      * @param destination The identifier of the destination chain.
