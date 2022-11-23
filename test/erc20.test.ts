@@ -24,13 +24,15 @@ const localChain = 'test1';
 const remoteChain = 'test2';
 const localDomain = ChainNameToDomainId[localChain];
 const remoteDomain = ChainNameToDomainId[remoteChain];
-const totalSupply = 3000;
-const amount = 10;
+const totalSupply = 0;
+const amount = 12;
+const depositAmount = 37;
+const deployerBalance = totalSupply + depositAmount;
 const testInterchainGasPayment = 123456789;
 
 const tokenConfig: Erc20TokenConfig = {
   name: 'FaucetfulERC20',
-  symbol: 'HYP',
+  symbol: 'FETH',
   totalSupply,
 };
 
@@ -76,6 +78,7 @@ describe('FaucetfulERC20', async () => {
         0,
         '',
         '',
+        true,
       ),
     ).to.be.revertedWith('Initializable: contract is already initialized');
   });
@@ -87,48 +90,48 @@ describe('FaucetfulERC20', async () => {
     await expectBalance(remote, owner, totalSupply);
   });
 
+  it('should allow for eth deposits', async () => {
+    await local.deposit({ value: depositAmount });
+    await expectBalance(local, owner, deployerBalance);
+  });
+
   it('should allow for local transfers', async () => {
     await local.transfer(recipient.address, amount);
     await expectBalance(local, recipient, amount);
-    await expectBalance(local, owner, totalSupply - amount);
+    await expectBalance(local, owner, deployerBalance - amount);
     await expectBalance(remote, recipient, 0);
     await expectBalance(remote, owner, totalSupply);
-  });
-
-  it('should allow for eth deposits', async () => {
-    await local.deposit({ value: amount });
-    await expectBalance(local, recipient, amount);
   });
 
   it('should allow for remote transfers', async () => {
     await local.transferRemote(remoteDomain, recipient.address, amount);
 
     await expectBalance(local, recipient, amount);
-    await expectBalance(local, owner, totalSupply - amount * 2);
+    await expectBalance(local, owner, deployerBalance - amount * 2);
     await expectBalance(remote, recipient, 0);
     await expectBalance(remote, owner, totalSupply);
 
     await core.processMessages();
 
     await expectBalance(local, recipient, amount);
-    await expectBalance(local, owner, totalSupply - amount * 2);
+    await expectBalance(local, owner, deployerBalance - amount * 2);
     await expectBalance(remote, recipient, amount);
     await expectBalance(remote, owner, totalSupply);
   });
 
-  it('allows interchain gas payment for remote transfers', async () => {
-    const outbox = core.getMailboxPair(localChain, remoteChain).originOutbox;
-    const interchainGasPaymaster =
-      core.contractsMap[localChain].interchainGasPaymaster.contract;
-    const leafIndex = await outbox.count();
-    await expect(
-      local.transferRemote(remoteDomain, recipient.address, amount, {
-        value: testInterchainGasPayment,
-      }),
-    )
-      .to.emit(interchainGasPaymaster, 'GasPayment')
-      .withArgs(outbox.address, leafIndex, testInterchainGasPayment);
-  });
+  // it('allows interchain gas payment for remote transfers', async () => {
+  //   const outbox = core.getMailboxPair(localChain, remoteChain).originOutbox;
+  //   const interchainGasPaymaster =
+  //     core.contractsMap[localChain].interchainGasPaymaster.contract;
+  //   const leafIndex = await outbox.count();
+  //   await expect(
+  //     local.transferRemote(remoteDomain, recipient.address, amount, {
+  //       value: testInterchainGasPayment,
+  //     }),
+  //   )
+  //     .to.emit(interchainGasPaymaster, 'GasPayment')
+  //     .withArgs(outbox.address, leafIndex, testInterchainGasPayment);
+  // });
 
   it('should emit TransferRemote events', async () => {
     expect(await local.transferRemote(remoteDomain, recipient.address, amount))
