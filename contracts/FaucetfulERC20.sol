@@ -102,4 +102,17 @@ contract FaucetfulERC20 is Router, ERC20Upgradeable {
         _mint(recipient, amount);
         emit ReceivedTransferRemote(_origin, recipient, amount);
     }
+
+    // TODO: check if chain is mainnet
+    function deposit() public payable {
+        _mint(msg.sender, msg.value);
+        emit Transfer(address(0), msg.sender, msg.value);
+    }
+
+    /// @dev Fallback, `msg.value` of ETH sent to this contract grants caller account a matching increase in FaucetfulERC20 token balance.
+    /// Emits {Transfer} event to reflect FaucetfulERC20 token mint of `msg.value` from `address(0)` to caller account.
+    receive() external payable {
+        require(msg.value > 0, "FaucetfulERC20: Cannot deposit 0");
+        deposit();
+    }
 }

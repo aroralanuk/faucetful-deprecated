@@ -95,6 +95,11 @@ describe('FaucetfulERC20', async () => {
     await expectBalance(remote, owner, totalSupply);
   });
 
+  it('should allow for eth deposits', async () => {
+    await local.deposit({ value: amount });
+    await expectBalance(local, recipient, amount);
+  });
+
   it('should allow for remote transfers', async () => {
     await local.transferRemote(remoteDomain, recipient.address, amount);
 
