@@ -42,6 +42,11 @@ contract FaucetfulERC20 is Router, ERC20Upgradeable {
         _;
     }
 
+    modifier onlyTestnet() {
+        require(!isMainnetRouter, "FaucetfulERC20: not testnet router");
+        _;
+    }
+
     /**
      * @notice Initializes the Hyperlane router, ERC20 metadata, and mints initial supply to deployer.
      * @param _abacusConnectionManager The address of the connection manager contract.
