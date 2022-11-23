@@ -1,6 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import '@nomiclabs/hardhat-waffle';
 import { expect } from 'chai';
+import { Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
@@ -20,9 +21,8 @@ import { FaucetfulERC20Contracts } from '../src/contracts';
 import { FaucetfulERC20Deployer } from '../src/deploy';
 import { FaucetfulERC20 } from '../src/types';
 
-const localChain = 'test1';
-const remoteChain = 'test2';
-console.log(ChainNameToDomainId);
+const localChain = 'mumbai';
+const remoteChain = 'goerli';
 const localDomain = ChainNameToDomainId[localChain];
 const remoteDomain = ChainNameToDomainId[remoteChain];
 const totalSupply = 0;
@@ -39,7 +39,7 @@ const tokenConfig: Erc20TokenConfig = {
 };
 
 describe('FaucetfulERC20', async () => {
-  let owner: SignerWithAddress;
+  let owner: Wallet;
   let recipient: SignerWithAddress;
   let core: TestCoreApp;
   let deployer: FaucetfulERC20Deployer<TestChainNames>;
@@ -48,7 +48,11 @@ describe('FaucetfulERC20', async () => {
   let remote: FaucetfulERC20;
 
   before(async () => {
-    [owner, recipient] = await ethers.getSigners();
+    owner = new ethers.Wallet(process.env.PRIVATE_KEY).connect(
+      new ethers.providers.JsonRpcProvider(process.env.GOERLI_RPC_URL),
+    );
+    [recipient] = await ethers.getSigners();
+    console.log(owner);
     const multiProvider = getTestMultiProvider(owner);
 
     const coreDeployer = new TestCoreDeployer(multiProvider);

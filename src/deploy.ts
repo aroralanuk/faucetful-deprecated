@@ -37,7 +37,7 @@ export class FaucetfulERC20Deployer<
       config.totalSupply,
       config.name,
       config.symbol,
-      true,
+      config.isMainnetRouter,
     );
     return {
       router,

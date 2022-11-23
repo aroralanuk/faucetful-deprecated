@@ -8,3 +8,4 @@ coverage.json
 *.swp
 .yarn/install-state.gz
 flattened.sol
+.env
