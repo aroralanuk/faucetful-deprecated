@@ -15,12 +15,13 @@ import {
   getChainToOwnerMap,
   getTestMultiProvider,
   objMap,
+  serializeContracts,
   testChainConnectionConfigs,
 } from '@hyperlane-xyz/sdk';
 
 import { Erc20TokenConfig, FaucetfulERC20Config } from '../src/config';
 import { FaucetfulERC20Contracts } from '../src/contracts';
-import { FaucetfulERC20Deployer } from '../src/deploy';
+import { FaucetfulERC20Deployer, deployTestnet } from '../src/deploy';
 import { FaucetfulERC20 } from '../src/types';
 
 dotenv.config();
@@ -57,26 +58,13 @@ describe('FaucetfulERC20', async () => {
     // );
     [owner, recipient] = await ethers.getSigners();
 
-    const multiProvider = getTestMultiProvider(owner);
-
-    const coreDeployer = new TestCoreDeployer(multiProvider);
-    const coreContractsMaps = await coreDeployer.deploy();
-    core = new TestCoreApp(coreContractsMaps, multiProvider);
-    const config = core.extendWithConnectionClientConfig(
-      getChainToOwnerMap(testChainConnectionConfigs, owner.address),
-    );
-    const configWithTokenInfo: ChainMap<TestChainNames, FaucetfulERC20Config> =
-      objMap(config, (key) => ({
-        ...config[key],
-        ...tokenConfig,
-        isMainnetRouter: key === 'test1',
-      }));
-    // console.log(multiProvider);
-    deployer = new FaucetfulERC20Deployer(
-      multiProvider,
-      configWithTokenInfo,
-      core,
-    );
+    let contracts = await deployTestnet(tokenConfig);
+    local = contracts[localChain].router;
+    remote = contracts[remoteChain].router;
+    // const addresses = serializeContracts(contracts);
+    // console.log('===Contract Addresses===');
+    // console.log(JSON.stringify(addresses));
+    console.log(contracts);
 
     // TODO: call individual functions
     // const chains = Object.keys(configWithTokenInfo) as Array<ChainName>;
@@ -87,9 +75,7 @@ describe('FaucetfulERC20', async () => {
     //     );
     // });
 
-    contracts = await deployer.deploy();
-    local = contracts[localChain].router;
-    remote = contracts[remoteChain].router;
+    // contracts = await deployer.deploy();
   });
 
   it('should not be initializable again', async () => {
@@ -125,29 +111,29 @@ describe('FaucetfulERC20', async () => {
     await expectBalance(remote, owner, totalSupply);
   });
 
-  // it('should allow for local transfers', async () => {
-  //   await local.transfer(recipient.address, amount);
-  //   await expectBalance(local, recipient, amount);
-  //   await expectBalance(local, owner, deployerBalance - amount);
-  //   await expectBalance(remote, recipient, 0);
-  //   await expectBalance(remote, owner, totalSupply);
-  // });
+  it('should allow for local transfers', async () => {
+    await local.transfer(recipient.address, amount);
+    await expectBalance(local, recipient, amount);
+    await expectBalance(local, owner, deployerBalance - amount);
+    await expectBalance(remote, recipient, 0);
+    await expectBalance(remote, owner, totalSupply);
+  });
 
-  // it('should allow for remote transfers', async () => {
-  //   await local.transferRemote(remoteDomain, recipient.address, amount);
+  it('should allow for remote transfers', async () => {
+    await local.transferRemote(remoteDomain, recipient.address, amount);
 
-  //   await expectBalance(local, recipient, amount);
-  //   await expectBalance(local, owner, deployerBalance - amount * 2);
-  //   await expectBalance(remote, recipient, 0);
-  //   await expectBalance(remote, owner, totalSupply);
+    await expectBalance(local, recipient, amount);
+    await expectBalance(local, owner, deployerBalance - amount * 2);
+    await expectBalance(remote, recipient, 0);
+    await expectBalance(remote, owner, totalSupply);
 
-  //   await core.processMessages();
+    await core.processMessages();
 
-  //   await expectBalance(local, recipient, amount);
-  //   await expectBalance(local, owner, deployerBalance - amount * 2);
-  //   await expectBalance(remote, recipient, amount);
-  //   await expectBalance(remote, owner, totalSupply);
-  // });
+    await expectBalance(local, recipient, amount);
+    await expectBalance(local, owner, deployerBalance - amount * 2);
+    await expectBalance(remote, recipient, amount);
+    await expectBalance(remote, owner, totalSupply);
+  });
 
   // it('allows interchain gas payment for remote transfers', async () => {
   //   const outbox = core.getMailboxPair(localChain, remoteChain).originOutbox;
