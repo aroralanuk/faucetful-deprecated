@@ -1,11 +1,13 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import '@nomiclabs/hardhat-waffle';
 import { expect } from 'chai';
+import * as dotenv from 'dotenv';
 import { Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
   ChainMap,
+  ChainName,
   ChainNameToDomainId,
   TestChainNames,
   TestCoreApp,
@@ -21,8 +23,10 @@ import { FaucetfulERC20Contracts } from '../src/contracts';
 import { FaucetfulERC20Deployer } from '../src/deploy';
 import { FaucetfulERC20 } from '../src/types';
 
-const localChain = 'mumbai';
-const remoteChain = 'goerli';
+dotenv.config();
+
+const localChain = 'test1';
+const remoteChain = 'test2';
 const localDomain = ChainNameToDomainId[localChain];
 const remoteDomain = ChainNameToDomainId[remoteChain];
 const totalSupply = 0;
@@ -39,7 +43,7 @@ const tokenConfig: Erc20TokenConfig = {
 };
 
 describe('FaucetfulERC20', async () => {
-  let owner: Wallet;
+  let owner: SignerWithAddress;
   let recipient: SignerWithAddress;
   let core: TestCoreApp;
   let deployer: FaucetfulERC20Deployer<TestChainNames>;
@@ -48,11 +52,11 @@ describe('FaucetfulERC20', async () => {
   let remote: FaucetfulERC20;
 
   before(async () => {
-    owner = new ethers.Wallet(process.env.PRIVATE_KEY).connect(
-      new ethers.providers.JsonRpcProvider(process.env.GOERLI_RPC_URL),
-    );
-    [recipient] = await ethers.getSigners();
-    console.log(owner);
+    // owner = new ethers.Wallet(process.env.PRIVATE_KEY).connect(
+    //   new ethers.providers.JsonRpcProvider(process.env.GOERLI_RPC_URL),
+    // );
+    [owner, recipient] = await ethers.getSigners();
+
     const multiProvider = getTestMultiProvider(owner);
 
     const coreDeployer = new TestCoreDeployer(multiProvider);
@@ -67,11 +71,22 @@ describe('FaucetfulERC20', async () => {
         ...tokenConfig,
         isMainnetRouter: key === 'test1',
       }));
+    // console.log(multiProvider);
     deployer = new FaucetfulERC20Deployer(
       multiProvider,
       configWithTokenInfo,
       core,
     );
+
+    // TODO: call individual functions
+    // const chains = Object.keys(configWithTokenInfo) as Array<ChainName>;
+    // chains.forEach((chain) => {
+    //     await deployer.deployContracts(
+    //         chain,
+    //         {...configWithTokenInfo, isMainnetRouter: chain === 'ethereum'}
+    //     );
+    // });
+
     contracts = await deployer.deploy();
     local = contracts[localChain].router;
     remote = contracts[remoteChain].router;
