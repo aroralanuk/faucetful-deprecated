@@ -1,34 +1,18 @@
-# Interchain tokens using Hyperlane
+# Faucetful
 
-This repo showcases a Hyperlane ERC20 and ERC721 tokens (HypERC20 and HypERC721). These tokens extend the base standards with an additional `transferRemote` function.
+Recently, there's been a [shortage](https://ethereum-magicians.org/t/testnet-workgroup-paths-out-of-the-goerli-supply-mess/11453) of Goerli ETH. All the faucets are dry or give out max 0.2ETH/day. This has made the life of developers, testers, and ETH hobbyists very difficult. Your only option is to request goerli ETH from random Discord servers or on Twitter.
+Faucetful is a solution to this problem. It's a simple way swap your mainnet ETH for Goerli ETH at market rate in one click.
 
-```mermaid
-%%{init: {'theme':'base'}}%%
-graph TB
-    Alice((Alice))
-    Operator((Operator))
+We use the Hyperlane interoperability protocol to wrap your ETH into FETH, bridge it to Goerli, swap for WETH using the Uniswap v3 pool deployed, and unwrap it to deposit Goerli ETH into your address.
 
-    subgraph "Ethereum"
-        HYP_E[(HYP)]
-        O_E[/Outbox\]
-    end
+Live at [faucetful.vercel.app](https://faucetful.vercel.app/)
 
-    subgraph "Polygon"
-        HYP_P[(HYP)]
-        EthereumInbox[\EthereumInbox/]
-    end
+## Architecture
 
-    Bob((Bob))
+- [`FaucetfulERC20.sol`](contracts/FaucetfulERC20.sol): Minimalist ERC20 token for handling deposits/withdrawals on mainnet and georli, and cross-chain transfers.
+- [`FaucetfulFactory.sol`](contracts/FaucetfulFactory.sol): Factory contract for easily deploying the FETH-WETH Uniswap v3 pool, swapping tokens, and LPing into the pool.
 
-    Alice -- "transferRemote(Polygon, Bob, 5)" --> HYP_E
-    HYP_E -- "dispatch(Polygon, (Bob, 5))" --> O_E
-    Operator -- "checkpoint()" --> O_E
-    O_E-.->EthereumInbox
-    Operator -- "relay()" --> EthereumInbox
-    Operator -- "process(Ethereum, (Bob, 5))" --> EthereumInbox
-    EthereumInbox-->|"handle(Ethereum, (Bob, 5))"|HYP_P
-    HYP_P-.->Bob
-```
+![Flowchart](flowchart.png)
 
 ## Setup
 
