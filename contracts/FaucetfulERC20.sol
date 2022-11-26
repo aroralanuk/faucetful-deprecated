@@ -11,7 +11,7 @@ import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/
  * @dev Supply on each chain is not constant but the aggregate supply across all chains is.
  */
 contract FaucetfulERC20 is Router, ERC20Upgradeable {
-    bool public isMainnetRouter;
+    address public mainnetRouter;
 
     /**
      * @dev Emitted on `transferRemote` when a transfer message is dispatched.
@@ -38,12 +38,16 @@ contract FaucetfulERC20 is Router, ERC20Upgradeable {
     );
 
     modifier onlyMainnet() {
-        require(isMainnetRouter, "FaucetfulERC20: not mainnet router");
+        require(
+            mainnetRouter == address(0) || address(this) == mainnetRouter, "FaucetfulERC20: not mainnet router"
+        );
         _;
     }
 
     modifier onlyTestnet() {
-        require(!isMainnetRouter, "FaucetfulERC20: not testnet router");
+        require(
+            mainnetRouter == address(0) || address(this) != mainnetRouter, "FaucetfulERC20: not testnet router"
+        );
         _;
     }
 
@@ -60,8 +64,7 @@ contract FaucetfulERC20 is Router, ERC20Upgradeable {
         address _interchainGasPaymaster,
         uint256 _totalSupply,
         string memory _name,
-        string memory _symbol,
-        bool _isMainnetRouter
+        string memory _symbol
     ) external initializer {
         // Set ownable to sender
         _transferOwnership(msg.sender);
@@ -72,8 +75,14 @@ contract FaucetfulERC20 is Router, ERC20Upgradeable {
 
         __ERC20_init(_name, _symbol);
         _mint(msg.sender, _totalSupply);
+    }
 
-        isMainnetRouter = _isMainnetRouter;
+    /**
+     * @notice Sets the mainnet router address.
+     * @param _mainnetRouter The address of the mainnet router.
+     */
+    function setMainnetRouter(address _mainnetRouter) external onlyOwner {
+        mainnetRouter = _mainnetRouter;
     }
 
     /**

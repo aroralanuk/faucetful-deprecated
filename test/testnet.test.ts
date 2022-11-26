@@ -40,7 +40,6 @@ const tokenConfig: Erc20TokenConfig = {
   name: 'FaucetfulERC20',
   symbol: 'FETH',
   totalSupply,
-  isMainnetRouter: true,
 };
 
 describe('FaucetfulERC20', async () => {

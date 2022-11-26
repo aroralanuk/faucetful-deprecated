@@ -6,7 +6,6 @@ export type Erc20TokenConfig = {
   name: string;
   symbol: string;
   totalSupply: ethers.BigNumberish;
-  isMainnetRouter: boolean;
 };
 
 export const prodConfigs = {

@@ -46,7 +46,6 @@ export class FaucetfulERC20Deployer<
       config.totalSupply,
       config.name,
       config.symbol,
-      config.isMainnetRouter,
     );
     return {
       router,
@@ -55,36 +54,47 @@ export class FaucetfulERC20Deployer<
 }
 
 export async function deployTestnet(tokenConfig: Erc20TokenConfig) {
-  console.info('Getting signer');
+  console.info('Getting signer ...');
   const backupKey =
     '0x0123456789012345678901234567890123456789012345678901234567890123';
   const signer = new Wallet(process.env.PRIVATE_KEY || backupKey);
+  console.info("Signer's address:", signer.address);
 
-  console.info('Preparing utilities');
+  console.info('Preparing utilities ...');
+  console.log(prodConfigs);
   const chainProviders = objMap(prodConfigs, (_, config) => ({
     ...config,
     signer: signer.connect(config.provider),
   }));
+
+  // mapping to chain name to RPC provider
   const multiProvider = new MultiProvider(chainProviders);
 
+  // getting hyperlane core deployment on testnet2
   const core = HyperlaneCore.fromEnvironment('testnet2', multiProvider);
   const config = core.extendWithConnectionClientConfig(
     getChainToOwnerMap(prodConfigs, signer.address),
   );
+
+  // getting the deployment configs for FaucetfulERC20 deployment on each chain
+  // using Mumbai to test as Ethereum mainnet for now
+  console.log('Setting config for each chain ...');
   const configWithTokenInfo: ChainMap<ChainName, FaucetfulERC20Config> = objMap(
     config,
     (key) => ({
       ...config[key],
       ...tokenConfig,
-      isMainnetRouter: key === 'mumbai',
     }),
   );
 
+  // init deployer
+  console.log('Initializing deployer ...');
   const deployer = new FaucetfulERC20Deployer(
     multiProvider,
     configWithTokenInfo,
     core,
   );
+  // invoke the function on HyperlaneRouterDeployer
   const chainToContracts = await deployer.deploy();
   return chainToContracts;
 }

@@ -35,7 +35,6 @@ const tokenConfig: Erc20TokenConfig = {
   name: 'FaucetfulERC20',
   symbol: 'FETH',
   totalSupply,
-  isMainnetRouter: true,
 };
 
 describe('FaucetfulERC20', async () => {
@@ -61,7 +60,6 @@ describe('FaucetfulERC20', async () => {
       objMap(config, (key) => ({
         ...config[key],
         ...tokenConfig,
-        isMainnetRouter: key === 'test1',
       }));
     deployer = new FaucetfulERC20Deployer(
       multiProvider,
@@ -81,7 +79,6 @@ describe('FaucetfulERC20', async () => {
         0,
         '',
         '',
-        true,
       ),
     ).to.be.revertedWith('Initializable: contract is already initialized');
   });
@@ -98,37 +95,37 @@ describe('FaucetfulERC20', async () => {
     await expectBalance(local, owner, deployerBalance);
   });
 
-  it("shouldn't allow for eth deposits", async () => {
-    await expect(remote.deposit({ value: depositAmount })).to.be.revertedWith(
-      'FaucetfulERC20: not mainnet router',
-    );
-    // await remote.deposit({ value: depositAmount });
+  // it("shouldn't allow for eth deposits", async () => {
+  //   await expect(remote.deposit({ value: depositAmount })).to.be.revertedWith(
+  //     'FaucetfulERC20: not mainnet router',
+  //   );
+  //   // await remote.deposit({ value: depositAmount });
+  //   await expectBalance(remote, owner, totalSupply);
+  // });
+
+  it('should allow for local transfers', async () => {
+    await local.transfer(recipient.address, amount);
+    await expectBalance(local, recipient, amount);
+    await expectBalance(local, owner, deployerBalance - amount);
+    await expectBalance(remote, recipient, 0);
     await expectBalance(remote, owner, totalSupply);
   });
 
-  // it('should allow for local transfers', async () => {
-  //   await local.transfer(recipient.address, amount);
-  //   await expectBalance(local, recipient, amount);
-  //   await expectBalance(local, owner, deployerBalance - amount);
-  //   await expectBalance(remote, recipient, 0);
-  //   await expectBalance(remote, owner, totalSupply);
-  // });
+  it('should allow for remote transfers', async () => {
+    await local.transferRemote(remoteDomain, recipient.address, amount);
 
-  // it('should allow for remote transfers', async () => {
-  //   await local.transferRemote(remoteDomain, recipient.address, amount);
+    await expectBalance(local, recipient, amount);
+    await expectBalance(local, owner, deployerBalance - amount * 2);
+    await expectBalance(remote, recipient, 0);
+    await expectBalance(remote, owner, totalSupply);
 
-  //   await expectBalance(local, recipient, amount);
-  //   await expectBalance(local, owner, deployerBalance - amount * 2);
-  //   await expectBalance(remote, recipient, 0);
-  //   await expectBalance(remote, owner, totalSupply);
+    await core.processMessages();
 
-  //   await core.processMessages();
-
-  //   await expectBalance(local, recipient, amount);
-  //   await expectBalance(local, owner, deployerBalance - amount * 2);
-  //   await expectBalance(remote, recipient, amount);
-  //   await expectBalance(remote, owner, totalSupply);
-  // });
+    await expectBalance(local, recipient, amount);
+    await expectBalance(local, owner, deployerBalance - amount * 2);
+    await expectBalance(remote, recipient, amount);
+    await expectBalance(remote, owner, totalSupply);
+  });
 
   // it('allows interchain gas payment for remote transfers', async () => {
   //   const outbox = core.getMailboxPair(localChain, remoteChain).originOutbox;
@@ -144,14 +141,14 @@ describe('FaucetfulERC20', async () => {
   //     .withArgs(outbox.address, leafIndex, testInterchainGasPayment);
   // });
 
-  // it('should emit TransferRemote events', async () => {
-  //   expect(await local.transferRemote(remoteDomain, recipient.address, amount))
-  //     .to.emit(local, 'SentTransferRemote')
-  //     .withArgs(remoteDomain, recipient.address, amount);
-  //   expect(await core.processMessages())
-  //     .to.emit(local, 'ReceivedTransferRemote')
-  //     .withArgs(localDomain, recipient.address, amount);
-  // });
+  it('should emit TransferRemote events', async () => {
+    expect(await local.transferRemote(remoteDomain, recipient.address, amount))
+      .to.emit(local, 'SentTransferRemote')
+      .withArgs(remoteDomain, recipient.address, amount);
+    expect(await core.processMessages())
+      .to.emit(local, 'ReceivedTransferRemote')
+      .withArgs(localDomain, recipient.address, amount);
+  });
 });
 
 const expectBalance = async (
