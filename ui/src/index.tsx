@@ -1,22 +1,24 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-
-import App from './App';
-import './index.css';
-import reportWebVitals from './reportWebVitals';
-
 import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import { WagmiConfig, chain, configureChains, createClient } from 'wagmi';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
 
 import './App.css';
+import './index.css';
 import App from './pages/App';
+import reportWebVitals from './reportWebVitals';
 
 const { chains, provider } = configureChains(
   [chain.mainnet, chain.polygon, chain.optimism, chain.arbitrum],
-  [alchemyProvider({ alchemyId: process.env.ALCHEMY_ID }), publicProvider()],
+  [
+    alchemyProvider({
+      apiKey: process.env.ALCHEMY_ID || 'j8h5qnxHOrrLRtMrfYlsRNsGMUu54_1h',
+    }),
+    publicProvider(),
+  ],
 );
 
 const { connectors } = getDefaultWallets({
