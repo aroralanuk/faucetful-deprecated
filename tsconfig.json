@@ -21,16 +21,10 @@
     "strict": true,
     "outDir": "./dist",
     "rootDir": "./",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node"]
   },
-  "exclude": [
-    "./node_modules/",
-    "./dist/",
-    "./types/hardhat.d.ts"
-  ],
-  "include": [
-    "./src",
-    "./test",
-  ],
+  "exclude": ["./node_modules/", "./dist/", "./types/hardhat.d.ts"],
+  "include": ["./src", "./test"],
   "files": ["hardhat.config.ts"]
 }

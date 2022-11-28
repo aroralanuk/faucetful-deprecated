@@ -18,6 +18,9 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
   },
+  mocha: {
+    timeout: 500000,
+  },
   typechain: {
     outDir: './src/types',
     target: 'ethers-v5',

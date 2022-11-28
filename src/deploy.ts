@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import { Wallet } from 'ethers';
+import fs from 'fs';
 
 import {
   ChainMap,
@@ -7,6 +8,7 @@ import {
   HyperlaneCore,
   HyperlaneRouterDeployer,
   MultiProvider,
+  TestChainNames,
   getChainToOwnerMap,
   objMap,
   serializeContracts,
@@ -53,7 +55,13 @@ export class FaucetfulERC20Deployer<
   }
 }
 
-export async function deployTestnet(tokenConfig: Erc20TokenConfig) {
+const tokenConfig: Erc20TokenConfig = {
+  name: 'FaucetfulERC20',
+  symbol: 'FETH',
+  totalSupply: 0,
+};
+
+export async function deployTestnet() {
   console.info('Getting signer ...');
   const backupKey =
     '0x0123456789012345678901234567890123456789012345678901234567890123';
@@ -61,13 +69,13 @@ export async function deployTestnet(tokenConfig: Erc20TokenConfig) {
   console.info("Signer's address:", signer.address);
 
   console.info('Preparing utilities ...');
-  console.log(prodConfigs);
   const chainProviders = objMap(prodConfigs, (_, config) => ({
     ...config,
     signer: signer.connect(config.provider),
   }));
 
   // mapping to chain name to RPC provider
+  console.log('chainProviders', chainProviders);
   const multiProvider = new MultiProvider(chainProviders);
 
   // getting hyperlane core deployment on testnet2
@@ -96,5 +104,24 @@ export async function deployTestnet(tokenConfig: Erc20TokenConfig) {
   );
   // invoke the function on HyperlaneRouterDeployer
   const chainToContracts = await deployer.deploy();
-  return chainToContracts;
+
+  const addresses = serializeContracts(chainToContracts);
+  console.log('addresses', addresses);
+  console.log('===Contract Addresses===');
+  console.log(JSON.stringify(addresses));
+  fs.writeFileSync(
+    `./deployinfo/deploy.json`,
+    JSON.stringify(
+      {
+        goerli: addresses.goerli['router'],
+        mumbai: addresses.mumbai['router'],
+      },
+      null,
+      4,
+    ),
+  );
 }
+
+// deployTestnet()
+//   .then(() => console.log('Deploy complete'))
+//   .catch((e) => console.error(e));

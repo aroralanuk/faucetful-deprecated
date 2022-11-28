@@ -3,6 +3,7 @@ import '@nomiclabs/hardhat-waffle';
 import { expect } from 'chai';
 import * as dotenv from 'dotenv';
 import { Wallet } from 'ethers';
+import fs from 'fs';
 import { ethers } from 'hardhat';
 
 import {
@@ -36,11 +37,17 @@ const depositAmount = 37;
 const deployerBalance = totalSupply + depositAmount;
 const testInterchainGasPayment = 123456789;
 
-const tokenConfig: Erc20TokenConfig = {
-  name: 'FaucetfulERC20',
-  symbol: 'FETH',
-  totalSupply,
-};
+function checkDeploy() {
+  let deployInfo;
+  try {
+    deployInfo = JSON.parse(
+      fs.readFileSync(`./deployinfo/deploy.json`).toString(),
+    );
+  } catch (e) {
+    throw new Error(`Not deployed yet`);
+  }
+  return deployInfo;
+}
 
 describe('FaucetfulERC20', async () => {
   let owner: SignerWithAddress;
@@ -57,13 +64,15 @@ describe('FaucetfulERC20', async () => {
     // );
     [owner, recipient] = await ethers.getSigners();
 
-    let contracts = await deployTestnet(tokenConfig);
-    local = contracts[localChain].router;
-    remote = contracts[remoteChain].router;
-    // const addresses = serializeContracts(contracts);
-    // console.log('===Contract Addresses===');
-    // console.log(JSON.stringify(addresses));
-    console.log(contracts);
+    const routerInfo = checkDeploy();
+    console.log(routerInfo);
+    // TODO: fix this
+    local = new ethers.Contract(routerInfo.mumbai, FaucetfulERC20.abi);
+    remote = new ethers.Contract(routerInfo.goerli, FaucetfulERC20.abi);
+
+    // let contracts = await deployTestnet();
+    // local = contracts[localChain].router;
+    // remote = contracts[remoteChain].router;
 
     // TODO: call individual functions
     // const chains = Object.keys(configWithTokenInfo) as Array<ChainName>;
@@ -85,7 +94,6 @@ describe('FaucetfulERC20', async () => {
         0,
         '',
         '',
-        true,
       ),
     ).to.be.revertedWith('Initializable: contract is already initialized');
   });

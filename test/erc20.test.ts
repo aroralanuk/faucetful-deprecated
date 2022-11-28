@@ -83,6 +83,11 @@ describe('FaucetfulERC20', async () => {
     ).to.be.revertedWith('Initializable: contract is already initialized');
   });
 
+  it('should set mainnet router to self', async () => {
+    local.setMainnetRouter(local.address);
+    remote.setMainnetRouter(local.address);
+  });
+
   it('should mint total supply to deployer', async () => {
     await expectBalance(local, recipient, 0);
     await expectBalance(local, owner, totalSupply);
@@ -95,13 +100,12 @@ describe('FaucetfulERC20', async () => {
     await expectBalance(local, owner, deployerBalance);
   });
 
-  // it("shouldn't allow for eth deposits", async () => {
-  //   await expect(remote.deposit({ value: depositAmount })).to.be.revertedWith(
-  //     'FaucetfulERC20: not mainnet router',
-  //   );
-  //   // await remote.deposit({ value: depositAmount });
-  //   await expectBalance(remote, owner, totalSupply);
-  // });
+  it("shouldn't allow for eth deposits", async () => {
+    await expect(remote.deposit({ value: depositAmount })).to.be.revertedWith(
+      'FaucetfulERC20: not mainnet router',
+    );
+    await expectBalance(remote, owner, totalSupply);
+  });
 
   it('should allow for local transfers', async () => {
     await local.transfer(recipient.address, amount);
