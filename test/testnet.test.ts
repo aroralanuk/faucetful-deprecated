@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import '@nomiclabs/hardhat-waffle';
 import { expect } from 'chai';
 import * as dotenv from 'dotenv';
-import { Wallet } from 'ethers';
+import { Contract, Wallet } from 'ethers';
 import fs from 'fs';
 import { ethers } from 'hardhat';
 
@@ -55,8 +55,8 @@ describe('FaucetfulERC20', async () => {
   let core: TestCoreApp;
   let deployer: FaucetfulERC20Deployer<TestChainNames>;
   let contracts: Record<TestChainNames, FaucetfulERC20Contracts>;
-  let local: FaucetfulERC20;
-  let remote: FaucetfulERC20;
+  let local: Contract;
+  let remote: Contract;
 
   before(async () => {
     // owner = new ethers.Wallet(process.env.PRIVATE_KEY).connect(
@@ -65,10 +65,30 @@ describe('FaucetfulERC20', async () => {
     [owner, recipient] = await ethers.getSigners();
 
     const routerInfo = checkDeploy();
-    console.log(routerInfo);
-    // TODO: fix this
-    local = new ethers.Contract(routerInfo.mumbai, FaucetfulERC20.abi);
-    remote = new ethers.Contract(routerInfo.goerli, FaucetfulERC20.abi);
+    console.log(
+      'contracts addresses are',
+      routerInfo.goerli,
+      'on goerli and',
+      routerInfo.mumbai,
+      'on mumbai',
+    );
+
+    const erc20factory = await ethers.getContractFactory('FaucetfulERC20');
+
+    const backupKey =
+      '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const signer = new Wallet(process.env.PRIVATE_KEY || backupKey);
+
+    local = new ethers.Contract(
+      routerInfo.goerli,
+      erc20factory.interface,
+      signer,
+    );
+    remote = new ethers.Contract(
+      routerInfo.mumbai,
+      erc20factory.interface,
+      signer,
+    );
 
     // let contracts = await deployTestnet();
     // local = contracts[localChain].router;
