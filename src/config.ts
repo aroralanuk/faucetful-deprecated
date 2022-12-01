@@ -16,10 +16,11 @@ export const prodConfigs = {
   // ethereum: chainConnectionConfigs.ethereum,
   mumbai: {
     ...chainConnectionConfigs.mumbai,
-    confirmations: 3,
+    confirmations: 1,
     overrides: {
-      maxFeePerGas: 100 * 10 ** 9, // 1000 gwei
-      maxPriorityFeePerGas: 70 * 10 ** 9, // 40 gwei
+      maxFeePerGas: 70 * 10 ** 9, // 1000 gwei
+      maxPriorityFeePerGas: 40 * 10 ** 9, // 40 gwei
+      gasLimit: 60000,
     },
   },
 };
