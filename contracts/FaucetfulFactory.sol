@@ -26,7 +26,7 @@ contract FaucetfulFactory is Ownable {
         tokenMainnet = tokenMainnet_;
     }
 
-    function seTestnetToken(address tokenTestnet_) external onlyOwner {
+    function setTestnetToken(address tokenTestnet_) external onlyOwner {
         tokenTestnet = tokenTestnet_;
     }
 
