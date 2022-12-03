@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.16;
 
+import "forge-std/console.sol";
+
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
@@ -32,8 +34,9 @@ contract FaucetfulFactory is Ownable {
 
     /// @notice Creates a UniswapV3 pool for the given two tokens and fee
     /// @dev 500 tick is 0.3% fee tier
-    function createUniV3Pool() external onlyOwner {
-        pool = uniswapV3Factory.createPool(tokenMainnet, tokenTestnet, poolFee);
+    function createUniV3Pool() external onlyOwner returns (address pool_) {
+        pool_ = uniswapV3Factory.createPool(tokenMainnet, tokenTestnet, poolFee);
+        pool = pool_;
     }
 
 
