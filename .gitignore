@@ -1,11 +1,27 @@
 node_modules/
-cache/
 artifacts/
-types/
+cache/
+out/
 dist/
+types/
+
+# Ignore Environment Variables!
+.env
+.env.prod
+
+# Ignore all vscode settings
+.vscode/
+
+# Ignore flattened files
+flattened.*
+
+
+broadcast
 coverage/
 coverage.json
-*.swp
+
+# Ignore local misc files
 .yarn/install-state.gz
-flattened.sol
-.env
+.DS_Store
+*.pem
+*.swp

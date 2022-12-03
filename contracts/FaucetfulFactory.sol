@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.16;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
+
 contract FaucetfulFactory is Ownable {
-    address public immutable tokenMainnet;
-    address public immutable tokenTestnet;
+    address public tokenMainnet;
+    address public tokenTestnet;
     uint24 public constant poolFee = 3000;
     address public pool;
 
     IUniswapV3Factory public immutable uniswapV3Factory;
     ISwapRouter public immutable swapRouter;
 
-    constructor(address uniswapV3Factory_) {
+    constructor(address uniswapV3Factory_, address swapRouter_) {
         uniswapV3Factory = IUniswapV3Factory(uniswapV3Factory_);
+        swapRouter = ISwapRouter(swapRouter_);
     }
 
     function setMainnetToken(address tokenMainnet_) external onlyOwner {
@@ -28,13 +32,7 @@ contract FaucetfulFactory is Ownable {
 
     /// @notice Creates a UniswapV3 pool for the given two tokens and fee
     /// @dev 500 tick is 0.3% fee tier
-    /// @param tokenMainnet FaucetfulERC20 token address on testnet
-    /// @param tokenTestnet IWETH9 token address on testnet
-    /// @return pool The address of the newly created pool
-    function createUniV3Pool(
-        address tokenMainnet,
-        address tokenTestnet
-    ) public returns (address pool) {
+    function createUniV3Pool() external onlyOwner {
         pool = uniswapV3Factory.createPool(tokenMainnet, tokenTestnet, poolFee);
     }
 
