@@ -1,100 +1,67 @@
 name: ci
 
-on:
-  # Triggers the workflow on push or pull request events but only for the main branch
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+on: [push]
 
 jobs:
-  install:
+  tests:
+    name: Forge Testing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
         with:
-          path: .//node_modules
-          key: ${{ runner.os }}-yarn-cache-${{ hashFiles('./yarn.lock') }}
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: dependencies
+        run: forge install
+      - name: tests
+        run: forge test
 
-      - name: yarn-install
-        # Check out the lockfile from main, reinstall, and then
-        # verify the lockfile matches what was committed.
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: dependencies
+        run: forge install
+      - name: check contract sizes
+        run: forge build --sizes
+      - name: check gas snapshots
+        run: forge snapshot --check
+
+  # slither:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+  #     - name: slither
+  #       uses: crytic/slither-action@v0.2.0
+
+  scripts:
+    strategy:
+      fail-fast: true
+    name: Run Unix Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: dependencies
+        run: forge build --sizes
+        continue-on-error: true
+      - name: Run scripts
         run: |
-            yarn install
-            CHANGES=$(git status -s)
-            if [[ ! -z $CHANGES ]]; then
-              echo "Changes found: $CHANGES"
-              git diff
-              exit 1
-            fi
-
-  build:
-    runs-on: ubuntu-latest
-    needs: [install]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: yarn-cache
-        uses: actions/cache@v2
-        with:
-          path: .//node_modules
-          key: ${{ runner.os }}-yarn-cache-${{ hashFiles('./yarn.lock') }}
-
-      - name: build-cache
-        uses: actions/cache@v2
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-
-      - name: build
-        run: yarn run build
-
-  prettier:
-    runs-on: ubuntu-latest
-    needs: [install]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: .//node_modules
-          key: ${{ runner.os }}-yarn-cache-${{ hashFiles('./yarn.lock') }}
-
-      - name: prettier
-        run: |
-          yarn run prettier
-          CHANGES=$(git status -s)
-          if [[ ! -z $CHANGES ]]; then
-            echo "Changes found: $CHANGES"
-            exit 1
-          fi
-
-  lint:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-
-      - name: lint
-        run: yarn run lint
-
-
-  test:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-
-      - name: test
-        run: yarn run test
+          ls -lsa
+          ls script/
+          for file in script/*; do
+            forge script $file
+          done
