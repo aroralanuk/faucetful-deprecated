@@ -43,7 +43,7 @@ contract FaucetfulFactoryTest is Test {
         feth.initialize(
             GOERLI_ACM,
             GOERLI_IGP,
-            0,
+            GOERLI_IGP,
             "Faucetful Ether",
             "FETH"
         );
