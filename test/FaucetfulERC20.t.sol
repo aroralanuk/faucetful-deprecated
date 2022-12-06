@@ -8,6 +8,7 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 import {FaucetfulERC20} from "../contracts/FaucetfulERC20.sol";
 
 contract FaucetfulERC20Test is Test {
+    using TypeCasts for bytes32;
     MockHyperlaneEnvironment internal testEnv;
 
     uint32 internal mainnetDomain = 0x657468;
@@ -57,24 +58,93 @@ contract FaucetfulERC20Test is Test {
         assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
     }
 
+    function testDepositMainnet_Call() public {
+        (bool success, ) = address(mainnetFETH).call{value: 1 ether}("");
+        assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
+    }
+
     function testDepositTestnet_Fail() public {
         vm.expectRevert("FaucetfulERC20: not mainnet token");
         testnetFETH.deposit{value: 1 ether}();
         assertEq(testnetFETH.balanceOf(address(this)), 0);
     }
 
+    function testDepositTestnet_CallFail() public {
+        vm.expectRevert("FaucetfulERC20: not mainnet token");
+        (bool success, ) = address(testnetFETH).call{value: 1 ether}("");
+        assertEq(testnetFETH.balanceOf(address(this)), 0);
+    }
+
     function testTransferRemote_Mainnet() public {
         mainnetFETH.deposit{value: 1 ether}();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0);
+
         mainnetFETH.transferRemote(
             testnetDomain,
-            bytes32(uint256(uint160(address(this))) << 96),
+            TypeCasts.addressToBytes32(address(this)),
             1 ether
         );
-        assertEq(mainnetFETH.balanceOf(address(this)), 0);
-
         testEnv.processNextPendingMessage();
-        // assertEq(testnetFETH.balanceOf(address(this)), 1 ether);
 
+        assertEq(mainnetFETH.balanceOf(address(this)), 0);
+        assertEq(testnetFETH.balanceOf(address(this)), 1 ether);
+
+    }
+
+    function testTransferRemote_Twice() public {
+        mainnetFETH.deposit{value: 1 ether}();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0);
+
+        mainnetFETH.transferRemote(
+            testnetDomain,
+            TypeCasts.addressToBytes32(address(this)),
+            0.6 ether
+        );
+        testEnv.processNextPendingMessage();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 0.4 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0.6 ether);
+
+        mainnetFETH.transferRemote(
+            testnetDomain,
+            TypeCasts.addressToBytes32(address(this)),
+            0.25 ether
+        );
+        testEnv.processNextPendingMessage();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 0.15 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0.85 ether);
+    }
+
+    function testTransferRemote_Roundabout() public {
+        mainnetFETH.deposit{value: 1 ether}();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0);
+
+        mainnetFETH.transferRemote(
+            testnetDomain,
+            TypeCasts.addressToBytes32(address(this)),
+            0.6 ether
+        );
+        testEnv.processNextPendingMessage();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 0.4 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0.6 ether);
+
+        testnetFETH.transferRemote(
+            mainnetDomain,
+            TypeCasts.addressToBytes32(address(this)),
+            0.25 ether
+        );
+        testEnv.processNextPendingMessageFromDestination();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 0.65 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0.35 ether);
     }
 
 }
