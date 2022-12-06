@@ -105,6 +105,19 @@ contract FaucetfulERC20 is TokenRouter, ERC20Upgradeable {
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
+    function withdraw(uint256 amount) external onlyMainnet {
+        require(
+            amount <= balanceOf(msg.sender),
+            "FETH: Insufficient balance"
+        );
+        _burn(msg.sender, amount);
+
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "FETH: ETH transfer failed");
+
+        emit Transfer(msg.sender, address(0), amount);
+    }
+
     /// @dev Fallback, `msg.value` of ETH sent to this contract grants caller account a matching increase in FaucetfulERC20 token balance.
     /// Emits {Transfer} event to reflect FaucetfulERC20 token mint of `msg.value` from `address(0)` to caller account.
     receive() external payable {

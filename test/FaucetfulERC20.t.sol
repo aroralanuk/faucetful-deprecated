@@ -60,6 +60,7 @@ contract FaucetfulERC20Test is Test {
 
     function testDepositMainnet_Call() public {
         (bool success, ) = address(mainnetFETH).call{value: 1 ether}("");
+        assertTrue(success);
         assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
     }
 
@@ -72,6 +73,7 @@ contract FaucetfulERC20Test is Test {
     function testDepositTestnet_CallFail() public {
         vm.expectRevert("FaucetfulERC20: not mainnet token");
         (bool success, ) = address(testnetFETH).call{value: 1 ether}("");
+        assertTrue(success);
         assertEq(testnetFETH.balanceOf(address(this)), 0);
     }
 
@@ -146,5 +148,49 @@ contract FaucetfulERC20Test is Test {
         assertEq(mainnetFETH.balanceOf(address(this)), 0.65 ether);
         assertEq(testnetFETH.balanceOf(address(this)), 0.35 ether);
     }
+
+    function testWithdrawMainnet_Success() public {
+        uint256 bal0 = address(this).balance;
+
+        mainnetFETH.deposit{value: 1 ether}();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
+
+        mainnetFETH.withdraw(0.25 ether);
+
+        uint256 bal1 = address(this).balance;
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 0.75 ether);
+        assertEq(bal0 - bal1, 0.75 ether);
+    }
+
+    function testWithdrawMainnet_FailInsufficientFunds() public {
+        mainnetFETH.deposit{value: 1 ether}();
+
+        vm.expectRevert("FETH: Insufficient balance");
+        mainnetFETH.withdraw(1.25 ether);
+    }
+
+    function testWithdrawTestnet_Fail() public {
+        mainnetFETH.deposit{value: 1 ether}();
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 1 ether);
+        assertEq(testnetFETH.balanceOf(address(this)), 0);
+
+        mainnetFETH.transferRemote(
+            testnetDomain,
+            TypeCasts.addressToBytes32(address(this)),
+            1 ether
+        );
+        testEnv.processNextPendingMessage();
+
+        vm.expectRevert("FaucetfulERC20: not mainnet token");
+        testnetFETH.withdraw(0.25 ether);
+
+        assertEq(mainnetFETH.balanceOf(address(this)), 0);
+        assertEq(testnetFETH.balanceOf(address(this)), 1 ether);
+    }
+
+    receive() external payable {}
 
 }
