@@ -1,51 +1,26 @@
-import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit';
-import '@rainbow-me/rainbowkit/styles.css';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { WagmiConfig, chain, configureChains, createClient } from 'wagmi';
-import { alchemyProvider } from 'wagmi/providers/alchemy';
-import { publicProvider } from 'wagmi/providers/public';
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
+import { DAppProvider } from "@usedapp/core";
+import { ApolloProvider } from 'react-apollo'
+import { ApolloClient } from 'apollo-client'
+import { InMemoryCache } from 'apollo-cache-inmemory'
+import { HttpLink } from 'apollo-link-http'
 
-import './App.css';
-import './index.css';
-import App from './pages/App';
-import reportWebVitals from './reportWebVitals';
+const client = new ApolloClient({
+  link: new HttpLink({
+    uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
+  }),
+  cache: new InMemoryCache(),
+})
 
-const { chains, provider } = configureChains(
-  [chain.mainnet, chain.polygon, chain.optimism, chain.arbitrum],
-  [
-    alchemyProvider({
-      apiKey: process.env.ALCHEMY_ID || 'j8h5qnxHOrrLRtMrfYlsRNsGMUu54_1h',
-    }),
-    publicProvider(),
-  ],
+ReactDOM.render(
+    <React.StrictMode>
+      <DAppProvider config={{}}>
+        <ApolloProvider client={client}>
+          <App />
+        </ApolloProvider>
+      </DAppProvider>
+    </React.StrictMode>,
+  document.getElementById("root")
 );
-
-const { connectors } = getDefaultWallets({
-  appName: 'My RainbowKit App',
-  chains,
-});
-
-const wagmiClient = createClient({
-  autoConnect: true,
-  connectors,
-  provider,
-});
-
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement,
-);
-root.render(
-  <React.StrictMode>
-    <WagmiConfig client={wagmiClient}>
-      <RainbowKitProvider chains={chains}>
-        <App />
-      </RainbowKitProvider>
-    </WagmiConfig>
-  </React.StrictMode>,
-);
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals(console.log);

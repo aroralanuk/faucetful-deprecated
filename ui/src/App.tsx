@@ -1,43 +1,25 @@
-import { Box } from '@chakra-ui/react';
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-
-// import Navigation from '../components/Navigation';
-import TopNav from '../components/top-nav';
-
-// import LP from '../pages/lp';
-// import Swap from '../pages/swap';
-import './App.css';
+import { ChakraProvider, useDisclosure } from "@chakra-ui/react";
+import theme from "./theme";
+import Header from "./components/Header";
+import ConnectButton from "./components/ConnectButton";
+import AccountModal from "./components/Modal/AccountModal";
+import Swap from "./components/Swap";
+import "@fontsource/arvo";
+import "./global.css";
+import Test from './components/Api/Test';
 
 function App() {
-  const tabs = [
-    {
-      path: '/swap',
-      name: 'Swap',
-      component: Swap,
-    },
-    {
-      path: '/lp',
-      name: 'Provide Liquidity',
-      component: LP,
-    },
-  ];
+  const  { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <BrowserRouter>
-      <TopNav />
-      <Box
-        textAlign="center"
-        fontSize="xl"
-        w={['90%', '85%', '80%']}
-        maxW={800}
-        mx="auto"
-      >
-        {/* <Box pt={10} pb={10}>
-          <Navigation />
-        </Box> */}
-      </Box>
-    </BrowserRouter>
+    <ChakraProvider theme={theme}>
+      <Header>
+        <ConnectButton handleOpenModal={onOpen} />
+        <AccountModal isOpen={isOpen} onClose={onClose} />
+      </Header>
+      <Swap />
+      <Test/>
+    </ChakraProvider>
   );
 }
 
